@@ -3,6 +3,7 @@
 using Spice86.Core.CLI;
 using Spice86.Core.Emulator.CPU;
 using Spice86.Core.Emulator.Debugger;
+using Spice86.Core.Emulator.Devices;
 using Spice86.Core.Emulator.Devices.DirectMemoryAccess;
 using Spice86.Core.Emulator.Devices.ExternalInput;
 using Spice86.Core.Emulator.Devices.Input.Joystick;
@@ -17,6 +18,7 @@ using Spice86.Core.Emulator.InterruptHandlers.Bios;
 using Spice86.Core.Emulator.InterruptHandlers.Common.Callback;
 using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Core.Emulator.InterruptHandlers.Common.RoutineInstall;
+using Spice86.Core.Emulator.InterruptHandlers.Dos.Xms;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Keyboard;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Mouse;
 using Spice86.Core.Emulator.InterruptHandlers.SystemClock;
@@ -25,7 +27,9 @@ using Spice86.Core.Emulator.InterruptHandlers.VGA;
 using Spice86.Core.Emulator.IOPorts;
 using Spice86.Core.Emulator.Memory;
 using Spice86.Core.Emulator.OperatingSystem;
+using Spice86.Core.Emulator.OperatingSystem.Structures;
 using Spice86.Core.Emulator.Sound;
+using Spice86.Shared.Emulator.Errors;
 using Spice86.Shared.Emulator.Memory;
 using Spice86.Shared.Interfaces;
 
@@ -193,11 +197,27 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     /// The OPL3 FM Synth chip.
     /// </summary>
     public OPL3FM OPL3FM { get; }
+    
+    /// <summary>
+    /// The code invoked when emulation pauses.
+    /// </summary>
+    public event Action? Paused;
 
+    /// <summary>
+    /// The code invoked when emulation resumes.
+    /// </summary>
+    public event Action? Resumed;
+
+    /// <summary>
+    /// The emulator configuration.
+    /// </summary>
+    public Configuration Configuration { get; }
+    
     /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
+        Configuration = configuration;
         Memory = new Memory(new Ram(A20Gate.EndOfHighMemoryArea), configuration.A20Gate);
         bool initializeResetVector = configuration.InitializeDOS is true;
         if (initializeResetVector) {
@@ -210,6 +230,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         };
         CpuState = cpuState;
         DualPic = new(CpuState, configuration.FailOnUnhandledPort, configuration.InitializeDOS is false, loggerService);
+        
         // Breakpoints
         MachineBreakpoints = new(Memory, CpuState, loggerService);
         IoPortDispatcher = new IOPortDispatcher(CpuState, loggerService, configuration.FailOnUnhandledPort);
@@ -296,7 +317,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
             RegisterInterruptHandler(Dos.DosInt2FHandler);
 
             // Initialize DOS.
-            Dos.Initialize(SoundBlaster, CpuState, configuration.Ems);
+            Dos.Initialize(SoundBlaster, configuration.Ems, configuration.Xms);
             if (Dos.Ems is not null) {
                 RegisterInterruptHandler(Dos.Ems);
             }

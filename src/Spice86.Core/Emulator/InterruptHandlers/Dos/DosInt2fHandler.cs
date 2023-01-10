@@ -4,6 +4,7 @@ using Serilog.Events;
 
 using Spice86.Core.Emulator.CPU;
 using Spice86.Core.Emulator.InterruptHandlers;
+using Spice86.Core.Emulator.InterruptHandlers.Dos.Xms;
 using Spice86.Core.Emulator.Memory;
 using Spice86.Shared.Interfaces;
 using Spice86.Shared.Utils;
@@ -12,13 +13,17 @@ using Spice86.Shared.Utils;
 /// Reimplementation of int2f
 /// </summary>
 public class DosInt2fHandler : InterruptHandler {
+    private readonly ExtendedMemoryManager? _xms;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="DosInt2fHandler"/> class.
     /// </summary>
+    /// <param name="xms">The extended memory manager. Can be <c>null</c> if XMS was not enabled.</param>
     /// <param name="memory">The memory bus.</param>
     /// <param name="cpu">The emulated CPU.</param>
     /// <param name="loggerService">The logger service implementation.</param>
-    public DosInt2fHandler(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+    public DosInt2fHandler(ExtendedMemoryManager? xms, IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+        _xms = xms;
         FillDispatchTable();
     }
 
@@ -34,8 +39,29 @@ public class DosInt2fHandler : InterruptHandler {
     private void FillDispatchTable() {
         AddAction(0x16, () => ClearCFAndCX(true));
         AddAction(0x15, SendDeviceDriverRequest);
-        AddAction(0x43, () => ClearCFAndCX(true));
+        AddAction(0x43, () => GetXmsDriverInformation(true));
         AddAction(0x46, () => ClearCFAndCX(true));
+    }
+
+    private void GetXmsDriverInformation(bool calledFromVm) {
+        switch (State.AL) {
+            //Is XMS Driver installed
+            case 0:
+                State.AL = (byte)(_xms is null ? 0x0 : 0x80);
+                break;
+            //Get XMS Control Function Address
+            case 0x10:
+                State.ES = ExtendedMemoryManager.InterruptHandlerSegment;
+                State.BX = 0;
+                break;
+            default:
+                if (LoggerService.IsEnabled(LogEventLevel.Warning)) {
+                    LoggerService.Warning("{MethodName}: value {AL} not supported", nameof(GetXmsDriverInformation), State.AL);
+                }
+                break;
+        }
+        SetCarryFlag(false, calledFromVm);
+        State.CX = 0;
     }
 
     /// <summary>

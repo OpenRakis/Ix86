@@ -174,6 +174,11 @@ public class Memory : Indexable.Indexable, IMemory {
     }
 
     /// <summary>
+    /// Is A20 gate rollover enabled or not
+    /// </summary>
+    public bool IsA20Enabled { get; set; }
+
+    /// <summary>
     ///     Allow a class to register for a certain memory range.
     /// </summary>
     /// <param name="baseAddress">The start of the frame</param>

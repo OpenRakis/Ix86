@@ -15,7 +15,7 @@ public class EmmPage {
     }
 
     /// <summary>
-    /// THe page's memory content.
+    /// The page's memory content.
     /// </summary>
     public Ram PageMemory { get; }
 

@@ -20,6 +20,7 @@ using Spice86.Core.Emulator.Memory.Indexable;
 
 using System.Linq;
 using System.Text;
+using Spice86.Core.Emulator.InterruptHandlers.Dos.Xms;
 
 /// <summary>
 /// Represents the DOS kernel.
@@ -94,6 +95,11 @@ public class Dos {
     public ExpandedMemoryManager? Ems { get; private set; }
 
     /// <summary>
+    /// The XMS device driver.
+    /// </summary>
+    public ExtendedMemoryManager? Xms { get; private set; }
+
+    /// <summary>
     /// Initializes a new instance.
     /// </summary>
     /// <param name="memory">The emulator memory.</param>
@@ -115,10 +121,10 @@ public class Dos {
         MemoryManager = new DosMemoryManager(_memory, _loggerService);
         DosInt20Handler = new DosInt20Handler(_memory, _cpu, _loggerService);
         DosInt21Handler = new DosInt21Handler(_memory, _cpu, keyboardInt16Handler, _vgaFunctionality, this, _loggerService);
-        DosInt2FHandler = new DosInt2fHandler(_memory, _cpu, _loggerService);
+        DosInt2FHandler = new DosInt2fHandler(Xms, _memory, _cpu, _loggerService);
     }
 
-    internal void Initialize(IBlasterEnvVarProvider blasterEnvVarProvider, State state, bool enableEms) {
+    internal void Initialize(IBlasterEnvVarProvider blasterEnvVarProvider, bool enableEms, bool enableXms) {
         if (_loggerService.IsEnabled(LogEventLevel.Verbose)) {
             _loggerService.Verbose("Initializing DOS");
         }
@@ -128,6 +134,9 @@ public class Dos {
 
         if (enableEms) {
             Ems = new(_memory, _cpu, this, _loggerService);
+        }
+        if(enableXms) {
+            Xms = new(_memory, _cpu, _loggerService);
         }
     }
 
