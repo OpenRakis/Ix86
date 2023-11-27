@@ -198,7 +198,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     /// <summary>
     /// The interrupt handler for when the CPU encounters a division error
     /// </summary>
-    public CpuDivisionErrorInterruptHandler CpuDivisionErrorInterruptHandler { get; }
+    public DosDivisionErrorInterruptHandler DosDivisionErrorInterruptHandler { get; }
 
     /// <summary>
     /// Initializes a new instance
@@ -288,11 +288,11 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         MouseDriver = new MouseDriver(Cpu, Memory, MouseDevice, gui, VgaFunctions, loggerService);
         Dos = new Dos(Memory, Cpu, KeyboardInt16Handler, VgaFunctions, configuration.CDrive, configuration.Exe, loggerService);
 
-        CpuDivisionErrorInterruptHandler = new CpuDivisionErrorInterruptHandler(Memory, Cpu, loggerService);
+        DosDivisionErrorInterruptHandler = new DosDivisionErrorInterruptHandler(Dos.DosInt21Handler, Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
-            RegisterInterruptHandler(CpuDivisionErrorInterruptHandler);
+            RegisterInterruptHandler(DosDivisionErrorInterruptHandler);
             RegisterInterruptHandler(VideoInt10Handler);
             RegisterInterruptHandler(TimerInt8Handler);
             RegisterInterruptHandler(BiosKeyboardInt9Handler);
