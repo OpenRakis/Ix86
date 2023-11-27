@@ -201,6 +201,11 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public DosDivisionErrorInterruptHandler DosDivisionErrorInterruptHandler { get; }
 
     /// <summary>
+    /// The interrupt handler for when the CPU encounters an overflow trap
+    /// </summary>
+    public DosArithmeticOverflowHandler DosArithmeticOverflowHandler { get; }
+
+    /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
@@ -289,10 +294,12 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         Dos = new Dos(Memory, Cpu, KeyboardInt16Handler, VgaFunctions, configuration.CDrive, configuration.Exe, loggerService);
 
         DosDivisionErrorInterruptHandler = new DosDivisionErrorInterruptHandler(Dos.DosInt21Handler, Memory, Cpu, loggerService);
+        DosArithmeticOverflowHandler = new DosArithmeticOverflowHandler(Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
             RegisterInterruptHandler(DosDivisionErrorInterruptHandler);
+            RegisterInterruptHandler(DosArithmeticOverflowHandler);
             RegisterInterruptHandler(VideoInt10Handler);
             RegisterInterruptHandler(TimerInt8Handler);
             RegisterInterruptHandler(BiosKeyboardInt9Handler);
