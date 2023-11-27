@@ -17,6 +17,7 @@ using Spice86.Core.Emulator.InterruptHandlers.Bios;
 using Spice86.Core.Emulator.InterruptHandlers.Common.Callback;
 using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Core.Emulator.InterruptHandlers.Common.RoutineInstall;
+using Spice86.Core.Emulator.InterruptHandlers.Dos;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Keyboard;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Mouse;
 using Spice86.Core.Emulator.InterruptHandlers.SystemClock;
@@ -195,6 +196,11 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public OPL3FM OPL3FM { get; }
 
     /// <summary>
+    /// The interrupt handler for when the CPU encounters a division error
+    /// </summary>
+    public CpuDivisionErrorInterruptHandler CpuDivisionErrorInterruptHandler { get; }
+
+    /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
@@ -210,6 +216,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         };
         CpuState = cpuState;
         DualPic = new(CpuState, configuration.FailOnUnhandledPort, configuration.InitializeDOS is false, loggerService);
+
         // Breakpoints
         MachineBreakpoints = new(Memory, CpuState, loggerService);
         IoPortDispatcher = new IOPortDispatcher(CpuState, loggerService, configuration.FailOnUnhandledPort);
@@ -281,8 +288,11 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         MouseDriver = new MouseDriver(Cpu, Memory, MouseDevice, gui, VgaFunctions, loggerService);
         Dos = new Dos(Memory, Cpu, KeyboardInt16Handler, VgaFunctions, configuration.CDrive, configuration.Exe, loggerService);
 
+        CpuDivisionErrorInterruptHandler = new CpuDivisionErrorInterruptHandler(Memory, Cpu, loggerService);
+
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
+            RegisterInterruptHandler(CpuDivisionErrorInterruptHandler);
             RegisterInterruptHandler(VideoInt10Handler);
             RegisterInterruptHandler(TimerInt8Handler);
             RegisterInterruptHandler(BiosKeyboardInt9Handler);
