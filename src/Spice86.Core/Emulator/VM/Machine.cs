@@ -206,6 +206,16 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public DosArithmeticOverflowHandler DosArithmeticOverflowHandler { get; }
 
     /// <summary>
+    /// The interrupt handler for when the CPU encounters an out-of-bounds error
+    /// </summary>
+    public DosArrayBoundsErrorHandler DosArrayBoundsErrorHandler { get; }
+
+    /// <summary>
+    /// The BIOS 'Print Screen' handler. Does nothing unless hooked.
+    /// </summary>
+    public BiosInt5PrintScreenHandler BiosInt5PrintScreenHandler { get; }
+
+    /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
@@ -295,14 +305,18 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
 
         DosDivisionErrorInterruptHandler = new DosDivisionErrorInterruptHandler(Dos.DosInt21Handler, Memory, Cpu, loggerService);
         DosArithmeticOverflowHandler = new DosArithmeticOverflowHandler(Memory, Cpu, loggerService);
+        DosArrayBoundsErrorHandler = new DosArrayBoundsErrorHandler(Memory, Cpu, loggerService);
+        BiosInt5PrintScreenHandler = new BiosInt5PrintScreenHandler(Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
             RegisterInterruptHandler(DosDivisionErrorInterruptHandler);
             RegisterInterruptHandler(DosArithmeticOverflowHandler);
+            RegisterInterruptHandler(DosArrayBoundsErrorHandler);
             RegisterInterruptHandler(VideoInt10Handler);
             RegisterInterruptHandler(TimerInt8Handler);
             RegisterInterruptHandler(BiosKeyboardInt9Handler);
+            RegisterInterruptHandler(BiosInt5PrintScreenHandler);
             RegisterInterruptHandler(BiosEquipmentDeterminationInt11Handler);
             RegisterInterruptHandler(SystemBiosInt12Handler);
             RegisterInterruptHandler(SystemBiosInt15Handler);
