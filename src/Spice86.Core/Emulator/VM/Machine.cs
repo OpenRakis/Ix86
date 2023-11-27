@@ -325,6 +325,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
             RegisterInterruptHandler(Dos.DosInt20Handler);
             RegisterInterruptHandler(Dos.DosInt21Handler);
             RegisterInterruptHandler(Dos.DosInt2FHandler);
+            RegisterInterruptHandler(Dos.DosInt28Handler);
 
             // Initialize DOS.
             Dos.Initialize(SoundBlaster, CpuState, configuration.Ems);
