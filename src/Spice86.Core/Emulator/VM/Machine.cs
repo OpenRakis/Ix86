@@ -19,6 +19,7 @@ using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Core.Emulator.InterruptHandlers.Common.RoutineInstall;
 using Spice86.Core.Emulator.InterruptHandlers.Critical;
 using Spice86.Core.Emulator.InterruptHandlers.Dos;
+using Spice86.Core.Emulator.InterruptHandlers.FpuEmulation;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Keyboard;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Mouse;
 using Spice86.Core.Emulator.InterruptHandlers.SystemClock;
@@ -232,6 +233,16 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public BiosBreakFlagHandler BiosBreakFlagHandler { get; }
 
     /// <summary>
+    /// The BIOS FPU error interrupt handler
+    /// </summary>
+    public BiosInt75FpuErrorHandler BiosInt75FpuErrorHandler { get; }
+
+    /// <summary>
+    /// The FPU software emulation via interrupt placeholders
+    /// </summary>
+    public FpuEmulationPlaceHolder FpuEmulationPlaceHolder { get; }
+
+    /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
@@ -326,31 +337,46 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         SystemBiosInt1CHandler = new SystemBiosInt1CHandler(Memory, Cpu, loggerService);
         NonMaskableInterruptHandler = new NonMaskableInterruptHandler(DualPic, Memory, Cpu, loggerService);
         BiosBreakFlagHandler = new BiosBreakFlagHandler(BiosDataArea, Memory, Cpu, loggerService);
+        BiosInt75FpuErrorHandler = new BiosInt75FpuErrorHandler(NonMaskableInterruptHandler, Memory, Cpu, loggerService);
+        FpuEmulationPlaceHolder = new(Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
-            RegisterInterruptHandler(NonMaskableInterruptHandler);
-            RegisterInterruptHandler(DosDivisionErrorInterruptHandler);
-            RegisterInterruptHandler(DosArithmeticOverflowHandler);
-            RegisterInterruptHandler(DosArrayBoundsErrorHandler);
-            RegisterInterruptHandler(VideoInt10Handler);
-            RegisterInterruptHandler(TimerInt8Handler);
-            RegisterInterruptHandler(BiosKeyboardInt9Handler);
-            RegisterInterruptHandler(BiosInt5PrintScreenHandler);
-            RegisterInterruptHandler(BiosEquipmentDeterminationInt11Handler);
-            RegisterInterruptHandler(SystemBiosInt12Handler);
-            RegisterInterruptHandler(SystemBiosInt15Handler);
-            RegisterInterruptHandler(SystemBiosInt1CHandler);
-            RegisterInterruptHandler(KeyboardInt16Handler);
-            RegisterInterruptHandler(SystemClockInt1AHandler);
-            RegisterInterruptHandler(Dos.DosInt20Handler);
-            RegisterInterruptHandler(Dos.DosInt22Handler);
-            RegisterInterruptHandler(Dos.DosInt23Handler);
-            RegisterInterruptHandler(Dos.DosInt24Handler);
-            RegisterInterruptHandler(Dos.DosInt21Handler);
-            RegisterInterruptHandler(Dos.DosInt2FHandler);
-            RegisterInterruptHandler(Dos.DosInt28Handler);
-            RegisterInterruptHandler(BiosBreakFlagHandler);
+            RegisterInterruptHandlers(
+                NonMaskableInterruptHandler,
+                DosDivisionErrorInterruptHandler,
+                DosArithmeticOverflowHandler,
+                DosArrayBoundsErrorHandler,
+                VideoInt10Handler,
+                TimerInt8Handler,
+                BiosKeyboardInt9Handler,
+                BiosInt5PrintScreenHandler,
+                BiosEquipmentDeterminationInt11Handler,
+                SystemBiosInt12Handler,
+                SystemBiosInt15Handler,
+                SystemBiosInt1CHandler,
+                KeyboardInt16Handler,
+                SystemClockInt1AHandler,
+                Dos.DosInt20Handler,
+                Dos.DosInt22Handler,
+                Dos.DosInt23Handler,
+                Dos.DosInt24Handler,
+                Dos.DosInt21Handler,
+                Dos.DosInt2FHandler,
+                Dos.DosInt28Handler,
+                BiosBreakFlagHandler,
+                BiosInt75FpuErrorHandler,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt1,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt2,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt3,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt4,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt5,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt6,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt7,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt8,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt9,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt10,
+                FpuEmulationPlaceHolder.FpuEmulationInterrupt11);
 
             // Initialize DOS.
             Dos.Initialize(SoundBlaster, CpuState, configuration.Ems);
@@ -366,6 +392,12 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
 
             SegmentedAddress mouseDriverAddress = AssemblyRoutineInstaller.InstallAssemblyRoutine(MouseDriver);
             mouseIrq12Handler.SetMouseDriverAddress(mouseDriverAddress);
+        }
+    }
+
+    private void RegisterInterruptHandlers(params IInterruptHandler[] interruptHandlers) {
+        foreach(IInterruptHandler handler in interruptHandlers) {
+            RegisterInterruptHandler(handler);
         }
     }
 
