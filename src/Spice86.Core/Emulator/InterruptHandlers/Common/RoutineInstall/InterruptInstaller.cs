@@ -5,6 +5,8 @@ using Spice86.Core.Emulator.Function;
 using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Shared.Emulator.Memory;
 
+using System.Runtime.CompilerServices;
+
 /// <summary>
 /// Handles installing interrupts in the machine: <br/>
 ///  - Writes their emulated ASM handlers in Emulated Memory BUS <br/>
@@ -31,8 +33,9 @@ public class InterruptInstaller : AssemblyRoutineInstaller {
     /// <param name="interruptHandler">The class that implements the interrupt handling with C# functions.</param>
     /// <returns>Address of the handler ASM code</returns>
     public SegmentedAddress InstallInterruptHandler(IInterruptHandler interruptHandler) {
+        string className = interruptHandler.GetType().Name;
         SegmentedAddress handlerAddress = InstallAssemblyRoutine(interruptHandler,
-            $"provided_interrupt_handler_{interruptHandler.VectorNumber}");
+            $"{className}_provided_interrupt_handler_{interruptHandler.VectorNumber}");
 
         // Define ASM in vector table
         _interruptVectorTable[interruptHandler.VectorNumber] = new(handlerAddress.Segment, handlerAddress.Offset);
