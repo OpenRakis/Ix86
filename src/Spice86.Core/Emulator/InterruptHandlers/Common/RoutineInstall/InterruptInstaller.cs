@@ -35,7 +35,7 @@ public class InterruptInstaller : AssemblyRoutineInstaller {
     public SegmentedAddress InstallInterruptHandler(IInterruptHandler interruptHandler) {
         string className = interruptHandler.GetType().Name;
         SegmentedAddress handlerAddress = InstallAssemblyRoutine(interruptHandler,
-            $"{className}_provided_interrupt_handler_{interruptHandler.VectorNumber}");
+            $"{className}_provided_interrupt_handler_0x{interruptHandler.VectorNumber:X2}");
 
         // Define ASM in vector table
         _interruptVectorTable[interruptHandler.VectorNumber] = new(handlerAddress.Segment, handlerAddress.Offset);
