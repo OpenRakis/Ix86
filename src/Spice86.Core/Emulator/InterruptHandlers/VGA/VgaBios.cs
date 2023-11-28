@@ -38,6 +38,8 @@ public class VgaBios : InterruptHandler, IVideoInt10Handler {
         FillDispatchTable();
 
         InitializeBiosArea();
+        VideoParametersTables.WriteBasicVideoParametersTable(memory);
+        VideoParametersTables.WriteVgaVideoParametersTable(memory, 0x000c2a76);
     }
 
     /// <summary>
