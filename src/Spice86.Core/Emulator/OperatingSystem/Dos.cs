@@ -39,6 +39,21 @@ public class Dos {
     public DosInt20Handler DosInt20Handler { get; }
 
     /// <summary>
+    /// Gets the "return to DOS" interrupt handler.
+    /// </summary>
+    public DosInt22Handler DosInt22Handler { get; }
+
+    /// <summary>
+    /// Gets the Ctrl-C Exit handler for DOS.
+    /// </summary>
+    public DosInt23Handler DosInt23Handler { get; }
+
+    /// <summary>
+    /// Gets the unrecoverable I/O error handler for DOS (Abort/Retry/Ignore resident code from COMMAND.COM).
+    /// </summary>
+    public DosInt24Handler DosInt24Handler { get; }
+
+    /// <summary>
     /// Gets the INT 21h DOS services.
     /// </summary>
     public DosInt21Handler DosInt21Handler { get; }
@@ -121,6 +136,9 @@ public class Dos {
         DosInt20Handler = new DosInt20Handler(_memory, _cpu, _loggerService);
         DosInt21Handler = new DosInt21Handler(_memory, _cpu, keyboardInt16Handler, _vgaFunctionality, this, _loggerService);
         DosInt2FHandler = new DosInt2fHandler(_memory, _cpu, _loggerService);
+        DosInt22Handler = new DosInt22Handler(DosInt21Handler, _memory, _cpu, _loggerService);
+        DosInt23Handler = new DosInt23Handler(DosInt22Handler, _memory, _cpu, _loggerService);
+        DosInt24Handler = new DosInt24Handler(DosInt22Handler, _memory, _cpu, _loggerService);
         DosInt28Handler = new DosInt28Handler(_memory, _cpu, _loggerService);
     }
 

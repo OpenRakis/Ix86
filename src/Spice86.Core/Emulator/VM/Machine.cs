@@ -17,6 +17,7 @@ using Spice86.Core.Emulator.InterruptHandlers.Bios;
 using Spice86.Core.Emulator.InterruptHandlers.Common.Callback;
 using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Core.Emulator.InterruptHandlers.Common.RoutineInstall;
+using Spice86.Core.Emulator.InterruptHandlers.Critical;
 using Spice86.Core.Emulator.InterruptHandlers.Dos;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Keyboard;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Mouse;
@@ -221,6 +222,16 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public SystemBiosInt1CHandler SystemBiosInt1CHandler { get; }
 
     /// <summary>
+    /// An interrupt that cannot be ignored by software means.
+    /// </summary>
+    public NonMaskableInterruptHandler NonMaskableInterruptHandler { get; }
+
+    /// <summary>
+    /// The BIOS Break Flag Handler (INT1B)
+    /// </summary>
+    public BiosBreakFlagHandler BiosBreakFlagHandler { get; }
+
+    /// <summary>
     /// Initializes a new instance
     /// </summary>
     public Machine(IGui? gui, State cpuState, IOPortDispatcher ioPortDispatcher, ILoggerService loggerService, CounterConfigurator counterConfigurator, ExecutionFlowRecorder executionFlowRecorder, Configuration configuration, bool recordData) {
@@ -313,9 +324,12 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         DosArrayBoundsErrorHandler = new DosArrayBoundsErrorHandler(Memory, Cpu, loggerService);
         BiosInt5PrintScreenHandler = new BiosInt5PrintScreenHandler(Memory, Cpu, loggerService);
         SystemBiosInt1CHandler = new SystemBiosInt1CHandler(Memory, Cpu, loggerService);
+        NonMaskableInterruptHandler = new NonMaskableInterruptHandler(DualPic, Memory, Cpu, loggerService);
+        BiosBreakFlagHandler = new BiosBreakFlagHandler(BiosDataArea, Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
+            RegisterInterruptHandler(NonMaskableInterruptHandler);
             RegisterInterruptHandler(DosDivisionErrorInterruptHandler);
             RegisterInterruptHandler(DosArithmeticOverflowHandler);
             RegisterInterruptHandler(DosArrayBoundsErrorHandler);
@@ -330,9 +344,13 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
             RegisterInterruptHandler(KeyboardInt16Handler);
             RegisterInterruptHandler(SystemClockInt1AHandler);
             RegisterInterruptHandler(Dos.DosInt20Handler);
+            RegisterInterruptHandler(Dos.DosInt22Handler);
+            RegisterInterruptHandler(Dos.DosInt23Handler);
+            RegisterInterruptHandler(Dos.DosInt24Handler);
             RegisterInterruptHandler(Dos.DosInt21Handler);
             RegisterInterruptHandler(Dos.DosInt2FHandler);
             RegisterInterruptHandler(Dos.DosInt28Handler);
+            RegisterInterruptHandler(BiosBreakFlagHandler);
 
             // Initialize DOS.
             Dos.Initialize(SoundBlaster, CpuState, configuration.Ems);
