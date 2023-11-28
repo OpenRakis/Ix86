@@ -1,15 +1,15 @@
 ﻿namespace Spice86.Core.Emulator.VM;
 
 using Spice86.Core.Emulator.CPU;
-using Spice86.Core.Emulator.InterruptHandlers.FpuEmulation;
+using Spice86.Core.Emulator.InterruptHandlers.PlaceHolders;
+using Spice86.Core.Emulator.InterruptHandlers.PlaceHolders.FpuEmulation;
 using Spice86.Core.Emulator.Memory;
 using Spice86.Shared.Interfaces;
 
 /// <summary>
-/// Centralizes FPU Emulation software intterrupts hooked by BORLAND C or other languge runtime.
+/// Centralizes interrupt handlers only defined in the IDT so hooking them by the program can succeed.
 /// </summary>
-
-public class FpuEmulationPlaceHolder {
+public class InterruptHandlersPlaceHolders {
 
     /// <summary>
     /// Initializes a new instance.
@@ -17,7 +17,8 @@ public class FpuEmulationPlaceHolder {
     /// <param name="memory">The memory bus.</param>
     /// <param name="cpu">The emulated CPU.</param>
     /// <param name="loggerService">The logger service implementation</param>
-    public FpuEmulationPlaceHolder(IMemory memory, Cpu cpu, ILoggerService loggerService) {
+    public InterruptHandlersPlaceHolders(IMemory memory, Cpu cpu, ILoggerService loggerService) {
+        MemoryOverlayInterruptHandlerPlaceHolder = new(memory, cpu, loggerService);
         FpuEmulationInterrupt1 = new(memory, cpu, loggerService);
         FpuEmulationInterrupt2 = new(memory, cpu, loggerService);
         FpuEmulationInterrupt3 = new(memory, cpu, loggerService);
@@ -30,6 +31,11 @@ public class FpuEmulationPlaceHolder {
         FpuEmulationInterrupt10 = new(memory, cpu, loggerService);
         FpuEmulationInterrupt11 = new(memory, cpu, loggerService);
     }
+
+    /// <summary>
+    /// Microsoft C memory overlay interrupt handler place holder
+    /// </summary>
+    public MemoryOverlayInterruptHandlerPlaceHolder MemoryOverlayInterruptHandlerPlaceHolder { get; }
 
     /// <summary>
     /// FPU Emulation software intterrupt hooked by BORLAND C or other languge runtime.

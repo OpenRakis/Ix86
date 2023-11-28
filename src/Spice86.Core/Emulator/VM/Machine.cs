@@ -19,7 +19,8 @@ using Spice86.Core.Emulator.InterruptHandlers.Common.MemoryWriter;
 using Spice86.Core.Emulator.InterruptHandlers.Common.RoutineInstall;
 using Spice86.Core.Emulator.InterruptHandlers.Critical;
 using Spice86.Core.Emulator.InterruptHandlers.Dos;
-using Spice86.Core.Emulator.InterruptHandlers.FpuEmulation;
+using Spice86.Core.Emulator.InterruptHandlers.PlaceHolders.FpuEmulation;
+using Spice86.Core.Emulator.InterruptHandlers.PlaceHolders;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Keyboard;
 using Spice86.Core.Emulator.InterruptHandlers.Input.Mouse;
 using Spice86.Core.Emulator.InterruptHandlers.SystemClock;
@@ -238,9 +239,9 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
     public BiosInt75FpuErrorHandler BiosInt75FpuErrorHandler { get; }
 
     /// <summary>
-    /// The FPU software emulation via interrupt placeholders
+    /// The interrupt handlers only defined in the IDT to be hooked by the running program
     /// </summary>
-    public FpuEmulationPlaceHolder FpuEmulationPlaceHolder { get; }
+    public InterruptHandlersPlaceHolders InterruptHandlersPlaceHolders { get; }
 
     /// <summary>
     /// Initializes a new instance
@@ -338,7 +339,7 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
         NonMaskableInterruptHandler = new NonMaskableInterruptHandler(DualPic, Memory, Cpu, loggerService);
         BiosBreakFlagHandler = new BiosBreakFlagHandler(BiosDataArea, Memory, Cpu, loggerService);
         BiosInt75FpuErrorHandler = new BiosInt75FpuErrorHandler(NonMaskableInterruptHandler, Memory, Cpu, loggerService);
-        FpuEmulationPlaceHolder = new(Memory, Cpu, loggerService);
+        InterruptHandlersPlaceHolders = new(Memory, Cpu, loggerService);
 
         if (configuration.InitializeDOS is not false) {
             // Register the interrupt handlers
@@ -366,17 +367,18 @@ public sealed class Machine : IDisposable, IDebuggableComponent {
                 Dos.DosInt28Handler,
                 BiosBreakFlagHandler,
                 BiosInt75FpuErrorHandler,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt1,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt2,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt3,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt4,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt5,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt6,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt7,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt8,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt9,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt10,
-                FpuEmulationPlaceHolder.FpuEmulationInterrupt11);
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt1,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt2,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt3,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt4,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt5,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt6,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt7,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt8,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt9,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt10,
+                InterruptHandlersPlaceHolders.FpuEmulationInterrupt11,
+                InterruptHandlersPlaceHolders.MemoryOverlayInterruptHandlerPlaceHolder);
 
             // Initialize DOS.
             Dos.Initialize(SoundBlaster, CpuState, configuration.Ems);

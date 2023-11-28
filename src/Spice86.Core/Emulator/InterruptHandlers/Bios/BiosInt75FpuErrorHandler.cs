@@ -7,7 +7,7 @@ using Spice86.Shared.Interfaces;
 
 
 /// <summary>
-/// An FPU error interrupt handler is redirected to INT 02 (Non Maskable Interrupt) by the BIOS
+/// An FPU error interrupt handler redirected to INT 02 (Non Maskable Interrupt) by the BIOS
 /// </summary>
 public class BiosInt75FpuErrorHandler : InterruptHandler {
     private readonly NonMaskableInterruptHandler _nonMaskableInterruptHandler;

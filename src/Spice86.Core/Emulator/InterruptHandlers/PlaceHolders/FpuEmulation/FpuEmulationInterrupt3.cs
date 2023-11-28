@@ -1,4 +1,4 @@
-﻿namespace Spice86.Core.Emulator.InterruptHandlers.FpuEmulation;
+﻿namespace Spice86.Core.Emulator.InterruptHandlers.PlaceHolders.FpuEmulation;
 
 using Spice86.Core.Emulator.CPU;
 using Spice86.Core.Emulator.Memory;
@@ -7,7 +7,7 @@ using Spice86.Shared.Interfaces;
 /// <summary>
 /// FPU Emulation software intterrupt hooked by BORLAND C or other languge runtime.
 /// </summary>
-public class FpuEmulationInterrupt8 : InterruptHandler {
+public class FpuEmulationInterrupt3 : InterruptHandler {
     /// <summary>
     /// Initializes a new instance.
     /// </summary>
@@ -15,11 +15,11 @@ public class FpuEmulationInterrupt8 : InterruptHandler {
     /// <param name="cpu">The emulated CPU.</param>
     /// <param name="loggerService">The logger service implementation</param>
 
-    public FpuEmulationInterrupt8(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+    public FpuEmulationInterrupt3(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
     }
 
     /// <inheritdoc/>
-    public override byte VectorNumber { get; } = 0x3b;
+    public override byte VectorNumber { get; } = 0x36;
 
     /// <inheritdoc/>
     public override void Run() {

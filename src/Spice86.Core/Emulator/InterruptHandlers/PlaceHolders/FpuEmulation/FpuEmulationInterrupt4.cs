@@ -1,4 +1,4 @@
-﻿namespace Spice86.Core.Emulator.InterruptHandlers.FpuEmulation;
+﻿namespace Spice86.Core.Emulator.InterruptHandlers.PlaceHolders.FpuEmulation;
 
 using Spice86.Core.Emulator.CPU;
 using Spice86.Core.Emulator.Memory;
