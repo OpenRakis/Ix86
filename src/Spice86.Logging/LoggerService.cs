@@ -56,6 +56,7 @@ public class LoggerService : ILoggerService {
             .Enrich.FromLogContext()
             .Enrich.WithExceptionDetails()
             .WriteTo.Console(outputTemplate: LogFormat)
+            .WriteTo.File("Spice86.log")
             .WriteTo.Debug(outputTemplate: LogFormat);
     }
 
