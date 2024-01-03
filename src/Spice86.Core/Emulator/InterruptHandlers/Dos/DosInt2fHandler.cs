@@ -51,7 +51,7 @@ public class DosInt2fHandler : InterruptHandler {
                 break;
             //Get XMS Control Function Address
             case 0x10:
-                State.ES = XMM.InterruptHandlerSegment;
+                State.ES = XMM.DosDeviceSegment;
                 State.BX = 0;
                 break;
             default:

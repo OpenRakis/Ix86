@@ -136,7 +136,7 @@ public class Dos {
             Ems = new(_memory, _cpu, this, _loggerService);
         }
         if(enableXms) {
-            Xms = new(_memory, _cpu, _loggerService);
+            Xms = new(_memory, _cpu, this, _loggerService);
         }
     }
 

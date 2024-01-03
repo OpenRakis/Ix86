@@ -7,13 +7,17 @@ using Spice86.Core.Emulator.Memory;
 using Spice86.Shared.Emulator.Memory;
 using Spice86.Shared.Interfaces;
 using Spice86.Shared.Utils;
+using Spice86.Core.Emulator.OperatingSystem;
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Spice86.Core.Emulator.OperatingSystem.Devices;
+using Spice86.Core.Emulator.OperatingSystem.Enums;
 
 /// <summary>
 /// Provides DOS applications with XMS memory.
+/// <remarks>This provides XMS 2.0</remarks>
 /// </summary>
 public sealed class XMM : InterruptHandler, IMemoryDevice {
     private int _a20EnableCount;
@@ -24,35 +28,51 @@ public sealed class XMM : InterruptHandler, IMemoryDevice {
     /// The segment of the interrupt handler.
     /// </summary>
 
-    public const ushort InterruptHandlerSegment = 0xD000;
+    public const ushort DosDeviceSegment = 0xD000;
     
     /// <summary>
     /// The size of available XMS Memory, in bytes.
+    /// <remarks>
+    /// 32 MB for XMS 2.0
+    /// </remarks>
     /// </summary>
-    public const uint XmsMemorySize = 8 * 1024 * 1024;
+    public const uint XmsMemorySize = 32 * 1024 * 1024;
 
     /// <summary>
     /// XMS plain old memory.
     /// </summary>
     public Ram XmsRam { get; private set; } = new(XmsMemorySize);
-/// <inheritdoc/>
 
-    public XMM(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
-        Memory.LoadData(MemoryUtils.ToPhysicalAddress(InterruptHandlerSegment, 0),
-            new byte[]{
-                0xEB, // jump near
-                0x03, // offset
-                0x90, // NOP
-                0x90, // NOP
-                0x90 // NOP
-            });
+    /// <summary>
+    /// DOS Device Driver Name.
+    /// </summary>
+    public const string XmsIdentifier = "XMSXXXX0";
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="XMM"/> class.
+    /// </summary>
+    /// <param name="memory">The memory bus.</param>
+    /// <param name="cpu">The emulated CPU.</param>
+    /// <param name="dos">The DOS kernel.</param>
+    /// <param name="loggerService">The logger service implementation.</param>
+    public XMM(IMemory memory, Cpu cpu, Dos dos, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+        var device = new CharacterDevice(DeviceAttributes.Ioctl, XmsIdentifier, loggerService);
+        dos.AddDevice(device, DosDeviceSegment, 0x0000);
+        //Memory.LoadData(MemoryUtils.ToPhysicalAddress(DosDeviceSegment, 0),
+        //    new byte[]{
+        //        0xEB, // jump near
+        //        0x03, // offset
+        //        0x90, // NOP
+        //        0x90, // NOP
+        //        0x90 // NOP
+        //    });
         Memory.RegisterMapping(XmsBaseAddress, XmsMemorySize, this);
         _xmsBlocksLinkedList.AddFirst(new XmsBlock(0, 0, XmsMemorySize, false));
         FillDispatchTable();
     }
 
     /// <summary>
-    /// Specifies the starting physical address of XMS.
+    /// Specifies the starting physical address of XMS. XMS starts at 1088k after HMA
     /// </summary>
     public const uint XmsBaseAddress = 0x10FFF0;
 
