@@ -92,12 +92,12 @@ public class Dos {
     /// <summary>
     /// The EMS device driver.
     /// </summary>
-    public ExpandedMemoryManager? Ems { get; private set; }
+    public EMM? Ems { get; private set; }
 
     /// <summary>
     /// The XMS device driver.
     /// </summary>
-    public ExtendedMemoryManager? Xms { get; private set; }
+    public XMM? Xms { get; private set; }
 
     /// <summary>
     /// Initializes a new instance.

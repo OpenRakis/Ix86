@@ -15,7 +15,7 @@ using System.Linq;
 /// <summary>
 /// Provides DOS applications with XMS memory.
 /// </summary>
-public sealed class ExtendedMemoryManager : InterruptHandler, IMemoryDevice {
+public sealed class XMM : InterruptHandler, IMemoryDevice {
     private int _a20EnableCount;
     private readonly LinkedList<XmsBlock> _xmsBlocksLinkedList = new();
     private readonly SortedList<int, int> _xmsHandles = new();
@@ -37,7 +37,7 @@ public sealed class ExtendedMemoryManager : InterruptHandler, IMemoryDevice {
     public Ram XmsRam { get; private set; } = new(XmsMemorySize);
 /// <inheritdoc/>
 
-    public ExtendedMemoryManager(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+    public XMM(IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
         Memory.LoadData(MemoryUtils.ToPhysicalAddress(InterruptHandlerSegment, 0),
             new byte[]{
                 0xEB, // jump near

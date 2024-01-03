@@ -24,7 +24,7 @@ using System.Linq;
 /// <remarks>This is a LIM standard implementation. Which means there's no
 /// difference between EMM pages and raw pages. They're both 16 KB.</remarks>
 /// </summary>
-public sealed class ExpandedMemoryManager : InterruptHandler {
+public sealed class EMM : InterruptHandler {
     /// <summary>
     /// The string identifier in main memory for the EMS Handler. <br/>
     /// DOS programs can detect the presence of an EMS handler by looking for it <br/>
@@ -100,7 +100,7 @@ public sealed class ExpandedMemoryManager : InterruptHandler {
     /// <param name="cpu">The emulated CPU.</param>
     /// <param name="dos">The DOS kernel.</param>
     /// <param name="loggerService">The logger service implementation.</param>
-    public ExpandedMemoryManager(IMemory memory, Cpu cpu, Dos dos, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+    public EMM(IMemory memory, Cpu cpu, Dos dos, ILoggerService loggerService) : base(memory, cpu, loggerService) {
         var device = new CharacterDevice(DeviceAttributes.Ioctl, EmsIdentifier, loggerService);
         dos.AddDevice(device, DosDeviceSegment, 0x0000);
         FillDispatchTable();

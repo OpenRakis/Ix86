@@ -13,7 +13,7 @@ using Spice86.Shared.Utils;
 /// Reimplementation of int2f
 /// </summary>
 public class DosInt2fHandler : InterruptHandler {
-    private readonly ExtendedMemoryManager? _xms;
+    private readonly XMM? _xms;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DosInt2fHandler"/> class.
@@ -22,7 +22,7 @@ public class DosInt2fHandler : InterruptHandler {
     /// <param name="memory">The memory bus.</param>
     /// <param name="cpu">The emulated CPU.</param>
     /// <param name="loggerService">The logger service implementation.</param>
-    public DosInt2fHandler(ExtendedMemoryManager? xms, IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
+    public DosInt2fHandler(XMM? xms, IMemory memory, Cpu cpu, ILoggerService loggerService) : base(memory, cpu, loggerService) {
         _xms = xms;
         FillDispatchTable();
     }
@@ -51,7 +51,7 @@ public class DosInt2fHandler : InterruptHandler {
                 break;
             //Get XMS Control Function Address
             case 0x10:
-                State.ES = ExtendedMemoryManager.InterruptHandlerSegment;
+                State.ES = XMM.InterruptHandlerSegment;
                 State.BX = 0;
                 break;
             default:
