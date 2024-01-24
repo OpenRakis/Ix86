@@ -29,7 +29,7 @@ public class DosDivisionErrorInterruptHandler : InterruptHandler {
     /// <inheritdoc/>
     public override void Run() {
         _dosInt21h.PrintString("Interrupt divide by zero");
-        _state.IsRunning = false;
+        State.IsRunning = false;
         throw new CpuDivisionErrorException("The CPU interrupt for divide by zero error was called.");
     }
 }

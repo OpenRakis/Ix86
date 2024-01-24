@@ -749,6 +749,13 @@ public class DosInt21Handler : InterruptHandler {
         ushort offset = State.DX;
         string str = GetDosString(Memory, segment, offset, '$');
 
+        PrintString(str);
+    }
+
+    /// <summary>
+    /// Prints a string to the screen at the current cursor position and page.
+    /// </summary>
+    public void PrintString(string str) {
         _vgaFunctionality.WriteString(str);
 
         if (LoggerService.IsEnabled(LogEventLevel.Verbose)) {

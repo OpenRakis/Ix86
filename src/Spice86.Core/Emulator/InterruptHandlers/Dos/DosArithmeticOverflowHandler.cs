@@ -24,6 +24,6 @@ public class DosArithmeticOverflowHandler : InterruptHandler {
 
     /// <inheritdoc/>
     public override void Run() {
-        _state.InterruptFlag = false;
+        State.InterruptFlag = false;
     }
 }

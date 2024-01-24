@@ -24,6 +24,6 @@ public class DosArrayBoundsErrorHandler : InterruptHandler {
 
     /// <inheritdoc/>
     public override void Run() {
-        _state.IsRunning = false;
+        State.IsRunning = false;
     }
 }
