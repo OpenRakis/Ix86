@@ -1,79 +1,260 @@
 <UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:viewModels="clr-namespace:Spice86.ViewModels"
-             xmlns:converters="clr-namespace:Spice86.Converters"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="Spice86.Views.DisassemblyView"
-             x:DataType="viewModels:DisassemblyViewModel">
-    <UserControl.Resources>
-        <converters:InstructionToStringConverter x:Key="InstructionToStringConverter" />
-    </UserControl.Resources>
-    <DockPanel>
-        <StackPanel Orientation="Horizontal"
-            DockPanel.Dock="Top" IsVisible="{Binding IsPaused}"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Top">
-                <Button
-                    Command="{Binding NewDisassemblyViewCommand}"
-                    Content="New Disassembly View"
-                    IsEnabled="{Binding IsPaused}" />
-                <Button
-                    Command="{Binding CloseTabCommand}"
-                    Content="Close View"
-                    IsEnabled="{Binding CanCloseTab}"/>
-                <StackPanel Orientation="Vertical" IsEnabled="{Binding IsPaused}">
-                    <Label HorizontalAlignment="Center" Content="Number of instructions shown" Margin="5" />
-                    <NumericUpDown Margin="5" Value="{Binding NumberOfInstructionsShown}" />
-                </StackPanel>
-                <StackPanel Orientation="Vertical" IsEnabled="{Binding IsPaused}">
-                    <Label HorizontalAlignment="Center" Content="Start Address" />
-                    <TextBox Text="{Binding StartAddress}" />
-                    <Button Content="Go to CS:IP" Command="{Binding GoToCsIpCommand}" />
-                </StackPanel>
-                <Button Content="Update" HotKey="Enter" IsDefault="True" Command="{Binding UpdateDisassemblyCommand}" />
-        </StackPanel>
-        <Grid DockPanel.Dock="Bottom" IsVisible="{Binding IsPaused}" RowDefinitions="Auto,*" IsEnabled="{Binding IsPaused}">
-            <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center">
-                <Button Content="Step into" Command="{Binding StepIntoCommand}" />
-            </StackPanel>
-            <DataGrid
-                Grid.Row="1"
-                AutoGenerateColumns="False"
-                CanUserReorderColumns="True"
-                CanUserResizeColumns="True"
-                CanUserSortColumns="False"
-                IsReadOnly="True"
-                SelectionMode="Extended"
-                SelectedItem="{Binding SelectedInstruction, Mode=TwoWay}"
-                IsVisible="{Binding IsPaused}"
-                ItemsSource="{Binding Instructions}">
-                <TextElement.FontFamily>
-                    <OnPlatform Default="{StaticResource RobotoMonoFont}" />
-                </TextElement.FontFamily>
-                <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding Address}" Header="Address" />
-                    <DataGridTextColumn Binding="{Binding SegmentedAddress}" Header="Based on CS:IP" />
-                    <DataGridCheckBoxColumn Binding="{Binding IsCsIp}" Header="Is at CS:IP?" />
-                    <DataGridTextColumn Binding="{Binding Converter={StaticResource InstructionToStringConverter}}" Header="Disassembly (MASM)" />
-                    <DataGridTextColumn Binding="{Binding IP16}" Header="16-bit IP" />
-                    <DataGridTextColumn Binding="{Binding IP32}" Header="32-bit IP" />
-                    <DataGridTextColumn Binding="{Binding SegmentPrefix}" Header="Segment Prefix" />
-                    <DataGridTextColumn Binding="{Binding MemorySegment}" Header="Memory Segment" />
-                    <DataGridCheckBoxColumn Binding="{Binding IsStackInstruction}" Header="Stack Instruction?" />
-                    <DataGridCheckBoxColumn Binding="{Binding IsIPRelativeMemoryOperand}" Header="Is IP relative?" />
-                    <DataGridTextColumn Binding="{Binding IPRelativeMemoryAddress}" Header="IP relative memory address" />
-                    <DataGridTextColumn Binding="{Binding Bytes}" Header="Bytes" />
-                    <DataGridTextColumn Binding="{Binding Length}" Header="Length" />
-                    <DataGridTextColumn Binding="{Binding FlowControl}" Header="FlowControl" />
-                </DataGrid.Columns>
-                <DataGrid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem Header="Copy line" Command="{Binding CopyLineCommand}" />
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
-            </DataGrid>
-        </Grid>
-    </DockPanel>
+			 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+			 xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+			 xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+			 xmlns:progRing="clr-namespace:AvaloniaProgressRing;assembly=AvaloniaProgressRing"
+			 xmlns:viewModels="clr-namespace:Spice86.ViewModels"
+			 xmlns:userControls="clr-namespace:Spice86.UserControls"
+			 xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+			 xmlns:converters="clr-namespace:Spice86.Converters"
+			 mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+			 x:Class="Spice86.Views.DisassemblyView"
+			 x:DataType="viewModels:DisassemblyViewModel">
+	<UserControl.Resources>
+		<converters:InstructionToStringConverter x:Key="InstructionToStringConverter" />
+		<converters:SegmentedAddressConverter x:Key="SegmentedAddressConverter" />
+		<converters:BoolToFontWeightConverter x:Key="BoolToFontWeightConverter" />
+		<converters:BreakpointToBrushConverter x:Key="BreakpointToBrushConverter" />
+	</UserControl.Resources>
+	<Grid RowDefinitions="Auto,*">
+		<Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" Grid.Row="0"
+			ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+			IsVisible="{Binding IsPaused}"
+			HorizontalAlignment="Left"
+			VerticalAlignment="Top">
+			<StackPanel Orientation="Vertical" Grid.Column="0">
+				<Button
+					Command="{Binding NewDisassemblyViewCommand}"
+					Content="New Disassembly View"
+					HotKey="Ctrl+T" ToolTip.Tip="Ctrl-T"
+					IsEnabled="{Binding IsPaused}" />
+				<Button
+					HotKey="Ctrl+F4"
+					ToolTip.Tip="Ctrl-F4"
+					Command="{Binding CloseTabCommand}"
+					Content="Close View"
+					IsEnabled="{Binding CanCloseTab}"/>
+			</StackPanel>
+			<StackPanel Orientation="Vertical" Grid.Column="1">
+				<Button Command="{Binding BeginCreateExecutionBreakpointCommand}" Content="Breakpoint..." />
+				<Button Content="Step into" ToolTip.Tip="F11" HotKey="F11" Command="{Binding StepIntoCommand}" />
+				<Button Content="Step over" ToolTip.Tip="F10" HotKey="F10" Command="{Binding StepOverCommand}" />
+			</StackPanel>
+			<StackPanel Orientation="Vertical" Grid.Column="2">
+				<Label HorizontalAlignment="Center" Content="Number of instructions shown" Margin="5" />
+				<NumericUpDown Width="100" Margin="5" Name="NumberOfInstructionsShownNumericUpDown" Value="{Binding NumberOfInstructionsShown}" />
+			</StackPanel>
+			<StackPanel Orientation="Vertical" Grid.Column="3">
+				<Label HorizontalAlignment="Center" Content="Start Address" />
+				<Grid ColumnDefinitions="*,*">
+					<AutoCompleteBox Name="SegmentedStartAddressTextBox"
+						Grid.Column="0"
+						Width="100"
+						Text="{Binding SegmentedStartAddress, Mode=TwoWay, UpdateSourceTrigger=LostFocus,
+						Converter={StaticResource SegmentedAddressConverter}}"
+						Watermark="segment:offset" />
+					<AutoCompleteBox Name="LinearStartAddressTextBox"
+						Grid.Column="1"
+						Width="80"
+						Text="{Binding StartAddress, UpdateSourceTrigger=PropertyChanged}"
+						Watermark="linear address"/>
+				</Grid>
+			</StackPanel>
+			<StackPanel Orientation="Vertical" Grid.Column="4">
+				<Button Content="Go to CS:IP" HotKey="Ctrl+F5" ToolTip.Tip="Ctrl-F5" Command="{Binding GoToCsIpCommand}" />
+				<Label
+					IsVisible="{Binding AreFunctionInformationProvided}">
+					Go to function:
+				</Label>
+				<ComboBox
+					Name="FunctionComboBox"
+					IsVisible="{Binding AreFunctionInformationProvided}"
+					ItemsSource="{Binding Functions}"
+					SelectedItem="{Binding SelectedFunction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+			</StackPanel>
+			<Button Grid.Column="5" Content="Refresh" HotKey="Ctrl+R" ToolTip.Tip="Ctrl-R" Command="{Binding UpdateDisassemblyCommand}" />
+		</Grid>
+		<progRing:ProgressRing
+			IsVisible="{Binding IsLoading}"
+			Width="100" Height="100"
+			Grid.Row="0"
+			IsActive="{Binding IsLoading}"
+			HorizontalAlignment="Center"
+			VerticalAlignment="Center"
+			Foreground="Black" />
+		<DataGrid
+			x:Name="DisassemblyDataGrid"
+			IsEnabled="{Binding !IsLoading}"
+			Grid.Row="1"
+			AutoGenerateColumns="False"
+			CanUserReorderColumns="True"
+			CanUserResizeColumns="True"
+			CanUserSortColumns="False"
+			IsReadOnly="True"
+			ColumnWidth="Auto"
+			SelectionMode="Extended"
+			FontSize="12"
+			FontFamily="{StaticResource ResourceKey=RobotoMonoFont}"
+			SelectedItem="{Binding SelectedInstruction, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+			IsVisible="{Binding IsPaused}"
+			ItemsSource="{Binding Instructions}">
+			<DataGrid.Columns>
+				<DataGridTextColumn
+					Binding="{Binding Address}">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+							<Setter Property="Background"
+								Value="{ReflectionBinding Breakpoint,
+								Converter={StaticResource BreakpointToBrushConverter},
+								ConverterParameter={}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn MaxWidth="300"
+					Binding="{Binding Converter={StaticResource InstructionToStringConverter}}"
+					Header="MASM">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn Binding="{Binding Bytes}" Header="Bytes (Length)">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn Binding="{Binding SegmentPrefix}" Header="Segment Prefix">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn Binding="{Binding MemorySegment}" Header="Memory Segment">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn Binding="{Binding FlowControl}" Header="FlowControl">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridCheckBoxColumn Binding="{Binding IsIPRelativeMemoryOperand}" Header="Is IP relative?" />
+				<DataGridTextColumn Binding="{Binding IPRelativeMemoryAddress}" Header="IP relative memory address">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridCheckBoxColumn Binding="{Binding IsStackInstruction}" Header="Stack Instruction?" />
+				<DataGridTextColumn Binding="{Binding IP16}" Header="16-bit IP">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+				<DataGridTextColumn Binding="{Binding IP32}" Header="32-bit IP">
+					<DataGridTextColumn.CellTheme>
+						<ControlTheme TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+							<Setter Property="FontWeight"
+								Value="{ReflectionBinding IsCsIp,
+								Converter={StaticResource BoolToFontWeightConverter}}" />
+						</ControlTheme>
+					</DataGridTextColumn.CellTheme>
+				</DataGridTextColumn>
+			</DataGrid.Columns>
+			<DataGrid.ContextMenu>
+				<ContextMenu>
+					<MenuItem Header="Copy line (Ctrl-C)" Command="{Binding CopyLineCommand}" />
+					<MenuItem Header="Create execution breakpoint here (F2)" Command="{Binding CreateExecutionBreakpointHereCommand}" />
+					<MenuItem Header="Remove execution breakpoint here (Del)" Command="{Binding RemoveExecutionBreakpointHereCommand}" />
+					<MenuItem Header="Disable breakpoint" Command="{Binding DisableBreakpointCommand}" />
+					<MenuItem Header="Enable breakpoint" Command="{Binding EnableBreakpointCommand}" />
+					<MenuItem Header="Move CS:IP here" Command="{Binding MoveCsIpHereCommand}" />
+				</ContextMenu>
+			</DataGrid.ContextMenu>
+			<DataGrid.Styles>
+				<Style Selector="DataGridColumnHeader">
+					<Setter Property="Padding" Value="0" />
+					<Setter Property="Margin" Value="0" />
+				</Style>
+			</DataGrid.Styles>
+		</DataGrid>
+		<Rectangle Fill="{Binding $parent[Window].Background}" Opacity="0.5" Grid.Row="0" Grid.RowSpan="2"
+			IsVisible="{Binding CreatingExecutionBreakpoint}"/>
+		<dialogHost:DialogHost IsVisible="{Binding !IsLoading}"
+			Grid.Row="0" Grid.RowSpan="2"
+			Background="{Binding $parent[Window].Background}"
+			CloseOnClickAway="False"
+			IsOpen="{Binding CreatingExecutionBreakpoint}">
+			<dialogHost:DialogHost.DialogContent>
+				<Grid RowDefinitions="Auto,*,Auto">
+					<Label
+						Grid.Row="0"
+						HorizontalAlignment="Center"
+						Content="Creating execution breakpoint"
+						FontWeight="Bold" />
+					<Grid
+						Grid.Row="1"
+						RowDefinitions="Auto,Auto">
+						<Label
+							Grid.Row="0"
+							VerticalContentAlignment="Center"
+							HorizontalContentAlignment="Left"
+							Content="Memory Address to break on:" />
+						<StackPanel
+							Grid.Row="1"
+							Orientation="Vertical">
+							<AutoCompleteBox
+								FontFamily="RobotoMonoFont"
+								Text="{Binding BreakpointAddress}"
+								Watermark="linear or segmented address" />
+							<TextBlock>Linear or segmented address</TextBlock>
+						</StackPanel>
+					</Grid>
+					<StackPanel
+						Grid.Row="2"
+						HorizontalAlignment="Right"
+						Orientation="Horizontal">
+						<Button
+							Command="{Binding ConfirmCreateExecutionBreakpointCommand}"
+							Content="OK"
+							IsDefault="True" />
+						<Button
+							Command="{Binding CancelCreateExecutionBreakpointCommand}"
+							Content="Cancel"
+							IsCancel="True" />
+					</StackPanel>
+				</Grid>
+			</dialogHost:DialogHost.DialogContent>
+		</dialogHost:DialogHost>
+		<userControls:ErrorModalDialogUserControl Grid.Row="0" Grid.RowSpan="2" />
+	</Grid>
 </UserControl>

@@ -161,7 +161,7 @@ public class Spice86DependencyInjection : IDisposable {
                 emulatorStateSerializer);
             mainWindowViewModel = new MainWindowViewModel(
                 timer, uiThreadDispatcher, hostStorageProvider, textClipboard, configuration,
-                loggerService, pauseHandler);
+                loggerService, pauseHandler, performanceViewModel);
         }
 
         VgaCard vgaCard = new(mainWindowViewModel, vgaRenderer, loggerService);
@@ -197,8 +197,9 @@ public class Spice86DependencyInjection : IDisposable {
             softwareMixer, mouse, mouseDriver,
             vgaFunctionality, pauseHandler);
 
+        IDictionary<SegmentedAddress, FunctionInformation> functionsInformation = reader.ReadGhidraSymbolsFromFileOrCreate();
         InitializeFunctionHandlers(configuration, machine, loggerService,
-            reader.ReadGhidraSymbolsFromFileOrCreate(), functionHandler, functionHandlerInExternalInterrupt);
+            functionsInformation, functionHandler, functionHandlerInExternalInterrupt);
 
         ProgramExecutor programExecutor = new(configuration, emulatorBreakpointsManager,
             emulatorStateSerializer, memory, cpu, cfgCpu, state,
@@ -245,9 +246,11 @@ public class Spice86DependencyInjection : IDisposable {
         DebugWindowViewModel? debugWindowViewModel = null;
         if (textClipboard != null && hostStorageProvider != null && uiThreadDispatcher != null) {
             IMessenger messenger = WeakReferenceMessenger.Default;
-            debugWindowViewModel = new DebugWindowViewModel(cpu, state, memory,
+            debugWindowViewModel = new DebugWindowViewModel(state, stack, memory,
                 midiDevice, videoState.DacRegisters.ArgbPalette, softwareMixer, vgaRenderer, videoState,
                 cfgCpu.ExecutionContextManager, messenger, uiThreadDispatcher, textClipboard, hostStorageProvider, 
+                emulatorBreakpointsManager,
+                functionsInformation,
                 new StructureViewModelFactory(configuration, loggerService, pauseHandler),
                 pauseHandler);
         }
